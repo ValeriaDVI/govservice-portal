@@ -13,4 +13,5 @@ urlpatterns = [
     path('api/users/', include('apps.users.urls')),
     path('api/applications/', include('apps.applications.urls')),
     path('register/', TemplateView.as_view(template_name='register.html')),
+    path('officer/', TemplateView.as_view(template_name='officer.html')),
 ]

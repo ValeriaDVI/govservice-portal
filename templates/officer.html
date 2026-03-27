@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2 style="color:#1a3c6e; margin-bottom:1.5rem">Панель офіцера — всі заяви</h2>
+<div id="access-error" style="display:none; color:red">Доступ заборонено</div>
+<div id="list"></div>
+{% endblock %}
+{% block scripts %}
+<script>
+const STATUS = { draft:'Чернетка', submitted:'Подана', in_review:'На розгляді', approved:'Схвалена', rejected:'Відхилена' };
+const COLORS = { draft:'#888', submitted:'#2196F3', in_review:'#FF9800', approved:'#4CAF50', rejected:'#f44336' };
+
+async function apiFetch(url, options={}) {
+    const token = localStorage.getItem('access');
+    if (!token) { window.location.href = '/login/'; return; }
+    return fetch(url, { ...options, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', ...options.headers }});
+}
+
+async function changeStatus(id, newStatus) {
+    const res = await apiFetch(`/api/applications/${id}/change-status/`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: newStatus })
+    });
+    if (res.ok) {
+        loadApplications();
+    } else {
+        const data = await res.json();
+        alert(data.error || 'Помилка');
+    }
+}
+
+async function loadApplications() {
+    const userRes = await apiFetch('/api/users/me/');
+    const user = await userRes.json();
+    if (user.role !== 'officer') {
+        window.location.href = '/dashboard/';
+        return;
+    }
+
+    const res = await apiFetch('/api/applications/');
+    const data = await res.json();
+    const list = document.getElementById('list');
+    if (!data.length) {
+        list.innerHTML = '<p style="color:#888">Заяв ще немає.</p>';
+        return;
+    }
+    list.innerHTML = data.map(a => `
+        <div style="background:white; padding:1.2rem 1.5rem; border-radius:8px; margin-bottom:1rem; box-shadow:0 2px 8px rgba(0,0,0,0.07)">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem">
+                <div>
+                    <strong>${a.title}</strong>
+                    <p style="color:#666; font-size:0.9rem; margin-top:0.3rem">${a.description}</p>
+                    <small style="color:#999">Автор: ${a.applicant} | ${new Date(a.created_at).toLocaleDateString('uk-UA')}</small>
+                </div>
+                <span style="background:${COLORS[a.status]}; color:white; padding:0.3rem 0.8rem; border-radius:20px; font-size:0.85rem; white-space:nowrap">${STATUS[a.status]}</span>
+            </div>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap">
+                <button onclick="changeStatus(${a.id}, 'in_review')" style="background:#FF9800; color:white; border:none; padding:0.4rem 0.8rem; border-radius:4px; cursor:pointer; font-size:0.85rem">На розгляд</button>
+                <button onclick="changeStatus(${a.id}, 'approved')" style="background:#4CAF50; color:white; border:none; padding:0.4rem 0.8rem; border-radius:4px; cursor:pointer; font-size:0.85rem">Схвалити</button>
+                <button onclick="changeStatus(${a.id}, 'rejected')" style="background:#f44336; color:white; border:none; padding:0.4rem 0.8rem; border-radius:4px; cursor:pointer; font-size:0.85rem">Відхилити</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+loadApplications();
+</script>
+{% endblock %}

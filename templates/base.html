@@ -15,8 +15,12 @@
 </head>
 <body>
     <nav>
-        <h1>🏛 GovService Portal</h1>
-        <button onclick="logout()">Вийти</button>
+    <h1>🏛 GovService Portal</h1>
+    <div style="display:flex; gap:0.5rem">
+        <button onclick="window.location.href='/dashboard/'" style="background:transparent; border:1px solid white; color:white; padding:0.4rem 1rem; border-radius:4px; cursor:pointer">Мої заяви</button>
+        <button onclick="window.location.href='/officer/'" style="background:transparent; border:1px solid white; color:white; padding:0.4rem 1rem; border-radius:4px; cursor:pointer">Панель офіцера</button>
+        <button onclick="logout()" style="background:transparent; border:1px solid white; color:white; padding:0.4rem 1rem; border-radius:4px; cursor:pointer">Вийти</button>
+    </div>
     </nav>
     <div class="container">
         {% block content %}{% endblock %}
