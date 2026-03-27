@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block content %}
+<div style="max-width:400px; margin:4rem auto; background:white; padding:2rem; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1)">
+    <h2 style="margin-bottom:1.5rem; color:#1a3c6e">Вхід до системи</h2>
+    <div id="error" style="color:red; margin-bottom:1rem; display:none"></div>
+    <input id="username" type="text" placeholder="Логін" style="width:100%; padding:0.7rem; margin-bottom:1rem; border:1px solid #ddd; border-radius:4px; font-size:1rem">
+    <input id="password" type="password" placeholder="Пароль" style="width:100%; padding:0.7rem; margin-bottom:1.5rem; border:1px solid #ddd; border-radius:4px; font-size:1rem">
+    <button onclick="login()" style="width:100%; padding:0.8rem; background:#1a3c6e; color:white; border:none; border-radius:4px; font-size:1rem; cursor:pointer">Увійти</button>
+    <p style="text-align:center; margin-top:1rem; font-size:0.9rem">Немає акаунту? <a href="/register/" style="color:#1a3c6e">Зареєструватися</a></p>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function login() {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const res = await fetch('/api/users/login/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (res.ok) {
+        localStorage.setItem('access', data.access);
+        localStorage.setItem('refresh', data.refresh);
+        window.location.href = '/dashboard/';
+    } else {
+        document.getElementById('error').style.display = 'block';
+        document.getElementById('error').textContent = 'Невірний логін або пароль';
+    }
+}
+</script>
+{% endblock %}

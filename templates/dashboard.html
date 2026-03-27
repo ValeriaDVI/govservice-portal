@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem">
+    <h2 style="color:#1a3c6e">Мої заяви</h2>
+    <button onclick="showForm()" style="background:#1a3c6e; color:white; border:none; padding:0.6rem 1.2rem; border-radius:4px; cursor:pointer">+ Нова заява</button>
+</div>
+
+<div id="form" style="display:none; background:white; padding:1.5rem; border-radius:8px; margin-bottom:1.5rem; box-shadow:0 2px 8px rgba(0,0,0,0.1)">
+    <h3 style="margin-bottom:1rem">Нова заява</h3>
+    <input id="title" placeholder="Назва заяви" style="width:100%; padding:0.7rem; margin-bottom:1rem; border:1px solid #ddd; border-radius:4px; font-size:1rem">
+    <textarea id="description" placeholder="Опис" rows="3" style="width:100%; padding:0.7rem; margin-bottom:1rem; border:1px solid #ddd; border-radius:4px; font-size:1rem"></textarea>
+    <button onclick="createApplication()" style="background:#1a3c6e; color:white; border:none; padding:0.6rem 1.2rem; border-radius:4px; cursor:pointer">Подати</button>
+    <button onclick="hideForm()" style="background:#ddd; border:none; padding:0.6rem 1.2rem; border-radius:4px; cursor:pointer; margin-left:0.5rem">Скасувати</button>
+</div>
+
+<div id="list"></div>
+{% endblock %}
+{% block scripts %}
+<script>
+const STATUS = { draft:'Чернетка', submitted:'Подана', in_review:'На розгляді', approved:'Схвалена', rejected:'Відхилена' };
+const COLORS = { draft:'#888', submitted:'#2196F3', in_review:'#FF9800', approved:'#4CAF50', rejected:'#f44336' };
+
+async function apiFetch(url, options={}) {
+    const token = localStorage.getItem('access');
+    if (!token) { window.location.href = '/login/'; return; }
+    return fetch(url, { ...options, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', ...options.headers }});
+}
+
+async function loadApplications() {
+    const res = await apiFetch('/api/applications/');
+    const data = await res.json();
+    const list = document.getElementById('list');
+    if (!data.length) {
+        list.innerHTML = '<p style="color:#888">Заяв ще немає. Створіть першу!</p>';
+        return;
+    }
+    list.innerHTML = data.map(a => `
+        <div style="background:white; padding:1.2rem 1.5rem; border-radius:8px; margin-bottom:1rem; box-shadow:0 2px 8px rgba(0,0,0,0.07); display:flex; justify-content:space-between; align-items:center">
+            <div>
+                <strong>${a.title}</strong>
+                <p style="color:#666; font-size:0.9rem; margin-top:0.3rem">${a.description}</p>
+                <small style="color:#999">${new Date(a.created_at).toLocaleDateString('uk-UA')}</small>
+            </div>
+            <span style="background:${COLORS[a.status]}; color:white; padding:0.3rem 0.8rem; border-radius:20px; font-size:0.85rem; white-space:nowrap">${STATUS[a.status]}</span>
+        </div>
+    `).join('');
+}
+
+async function createApplication() {
+    const res = await apiFetch('/api/applications/', {
+        method: 'POST',
+        body: JSON.stringify({ title: document.getElementById('title').value, description: document.getElementById('description').value })
+    });
+    if (res.ok) { hideForm(); loadApplications(); }
+}
+
+function showForm() { document.getElementById('form').style.display = 'block'; }
+function hideForm() { document.getElementById('form').style.display = 'none'; }
+
+loadApplications();
+</script>
+{% endblock %}
